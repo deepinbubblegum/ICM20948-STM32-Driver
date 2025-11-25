@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICM-20948 STM32 Driver Infographic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 256px;
+            max-height: 320px;
+        }
+
+        /* Specific style for the 3D Axis Canvas Container */
+        .axis-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            /* Default height */
+            background-color: #0f172a;
+            /* Slate 900 */
+            cursor: grab;
+            overflow: hidden;
+        }
+
+        .axis-container:active {
+            cursor: grabbing;
+        }
+
+        /* Ensure Canvas Fills Container */
+        #axisDiagram {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 320px;
+            }
+
+            .axis-container {
+                height: 500px;
+                /* Taller on desktop */
+            }
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23cbd5e1%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem top 50%;
+            background-size: 0.65rem auto;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-200">
+
+    <header class="text-center p-6 md:p-12">
+        <h1 class="text-3xl md:text-5xl lg:text-6xl font-black text-yellow-400">ICM-20948 STM32 Driver</h1>
+
+        <div
+            class="inline-block bg-slate-800 border border-slate-700 text-blue-400 text-xs md:text-sm font-bold px-4 py-1 rounded-full mt-4 mb-1 shadow-lg">
+            ℹ️ Current Support: SPI Interface Only
+        </div>
+
+        <p class="text-lg md:text-2xl text-slate-300 mt-3">From Noisy Data to Robot-Ready Orientation</p>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <section class="max-w-4xl mx-auto text-center">
+            <h2 class="text-2xl md:text-3xl font-bold text-orange-400 mb-4">Taming the 9-DOF Beast</h2>
+            <p class="text-base md:text-lg text-slate-300 leading-relaxed">
+                The ICM-20948 is a powerful 9-DOF sensor, but its raw output is noisy, uncalibrated, and misaligned.
+                This driver provides a complete software suite to transform this chaotic data into a stable, accurate,
+                and intuitive data stream for any robotics, drone, or motion-tracking project.
+            </p>
+        </section>
+
+        <section class="mt-12 md:mt-20">
+            <h2 class="text-2xl md:text-3xl font-bold text-orange-400 text-center mb-8">The Core Problem: Raw vs.
+                Processed</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+
+                <div class="bg-slate-800 rounded-xl shadow-xl p-5 md:p-6 flex flex-col">
+                    <h3 class="text-xl md:text-2xl font-bold text-red-500 mb-3 text-center">BEFORE: Raw Magnetometer
+                        Data</h3>
+                    <p class="text-sm md:text-base text-center mb-5 text-slate-300">Without calibration, the sensor data
+                        is offset (not centered at zero) and has a distorted scale, making it useless for calculating
+                        direction.</p>
+                    <div class="chart-container flex-grow w-full">
+                        <canvas id="rawMagChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-xl shadow-xl p-5 md:p-6 flex flex-col">
+                    <h3 class="text-xl md:text-2xl font-bold text-green-400 mb-3 text-center">AFTER: Calibrated Data
+                    </h3>
+                    <p class="text-sm md:text-base text-center mb-5 text-slate-300">Using the driver's calibration
+                        suite, the Hard Iron (Bias) and Soft Iron (Scale) errors are corrected, providing a clean,
+                        centered data stream.</p>
+                    <div class="chart-container flex-grow w-full">
+                        <canvas id="calibratedMagChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-12 md:mt-20">
+            <h2 class="text-2xl md:text-3xl font-bold text-orange-400 text-center mb-8">Driver Key Features</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+
+                <div class="bg-slate-800 rounded-xl shadow-xl p-5 md:p-6 flex flex-col">
+                    <h3 class="text-xl md:text-2xl font-bold text-yellow-400 mb-4 text-center">Complete 9-DOF Access
+                    </h3>
+                    <p class="text-sm md:text-base text-center mb-5 text-slate-300">The driver unifies all 9 axes (plus
+                        temperature) from the three internal sensors into a single, easy-to-use structure.</p>
+                    <div class="chart-container flex-grow w-full">
+                        <canvas id="dofChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-xl shadow-xl p-5 md:p-6 flex flex-col">
+                    <h3 class="text-xl md:text-2xl font-bold text-yellow-400 mb-4 text-center">Advanced Calibration
+                        Suite</h3>
+                    <p class="text-sm md:text-base text-center mb-5 text-slate-300">A three-stage process to correct all
+                        common sensor errors, turning raw values into physically accurate measurements.</p>
+
+                    <div class="flex flex-col items-center justify-center space-y-3 flex-grow mt-2">
+                        <div
+                            class="bg-red-500 text-white font-bold p-3 md:p-4 rounded-lg shadow-lg w-full text-center flex items-center justify-center">
+                            <span class="text-2xl md:text-3xl mr-3">🔄</span>
+                            <span class="text-sm md:text-base">Gyroscope (Stationary)</span>
+                        </div>
+                        <div class="text-yellow-400 text-3xl md:text-4xl font-light">↓</div>
+                        <div
+                            class="bg-orange-500 text-white font-bold p-3 md:p-4 rounded-lg shadow-lg w-full text-center flex items-center justify-center">
+                            <span class="text-2xl md:text-3xl mr-3">📦</span>
+                            <span class="text-sm md:text-base">Accelerometer (6-Point)</span>
+                        </div>
+                        <div class="text-yellow-400 text-3xl md:text-4xl font-light">↓</div>
+                        <div
+                            class="bg-yellow-500 text-slate-900 font-bold p-3 md:p-4 rounded-lg shadow-lg w-full text-center flex items-center justify-center">
+                            <span class="text-2xl md:text-3xl mr-3">🌐</span>
+                            <span class="text-sm md:text-base">Magnetometer (Figure-8)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-xl shadow-xl p-5 md:p-6 flex flex-col">
+                    <h3 class="text-xl md:text-2xl font-bold text-yellow-400 mb-4 text-center">Axis Remapping Engine
+                    </h3>
+                    <p class="text-sm md:text-base text-center mb-5 text-slate-300">Translates the sensor's physical
+                        orientation (Sensor Frame) to match your vehicle's frame (Body Frame) with one simple function.
+                    </p>
+
+                    <div class="flex flex-col items-center justify-center flex-grow space-y-3 mt-2 w-full">
+                        <div class="border-2 border-red-500 p-3 md:p-4 rounded-lg text-center w-full bg-red-500/10">
+                            <h4 class="font-bold text-red-400 text-sm md:text-base">Sensor Frame</h4>
+                            <p class="text-xs md:text-sm text-slate-400">(X, Y, Z on the chip)</p>
+                        </div>
+
+                        <div class="flex items-center w-full">
+                            <div class="border-t-2 border-dashed border-slate-600 flex-grow"></div>
+                            <span class="text-yellow-400 text-xl md:text-2xl mx-2">→</span>
+                            <div class="border-t-2 border-dashed border-slate-600 flex-grow"></div>
+                        </div>
+                        <code
+                            class="text-xs md:text-sm bg-slate-900 px-3 py-2 rounded-md font-mono border border-slate-700">SetMounting()</code>
+                        <div class="flex items-center w-full">
+                            <div class="border-t-2 border-dashed border-slate-600 flex-grow"></div>
+                            <span class="text-yellow-400 text-xl md:text-2xl mx-2">→</span>
+                            <div class="border-t-2 border-dashed border-slate-600 flex-grow"></div>
+                        </div>
+
+                        <div class="border-2 border-green-500 p-3 md:p-4 rounded-lg text-center w-full bg-green-500/10">
+                            <h4 class="font-bold text-green-400 text-sm md:text-base">Body Frame</h4>
+                            <p class="text-xs md:text-sm text-slate-400">(Vehicle Front, Right, Up)</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section class="mt-12 md:mt-20 mb-12">
+            <h2 class="text-2xl md:text-3xl font-bold text-orange-400 text-center mb-6">Interactive Axis Remapping
+                Engine</h2>
+            <div class="bg-slate-800 rounded-xl shadow-xl p-5 md:p-6 flex flex-col">
+                <p class="text-sm md:text-base text-center mb-5 text-slate-300">Configure how your sensor is mounted.
+                    <strong>Drag to rotate</strong> the 3D view, <strong>Scroll to zoom</strong>. The visualization
+                    updates in real-time.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- 3D Visualization -->
+                    <div
+                        class="axis-container bg-slate-900/50 rounded-xl border border-slate-700 flex items-center justify-center overflow-hidden relative lg:col-span-2">
+                        <div
+                            class="absolute top-3 left-3 text-xs text-slate-500 z-10 bg-slate-900/80 px-2 py-1 rounded pointer-events-none">
+                            🖱️ Drag to Rotate | 🔍 Scroll to Zoom
+                        </div>
+                        <canvas id="axisDiagram"></canvas>
+                    </div>
+
+                    <!-- Controls & Code -->
+                    <div class="flex flex-col space-y-6">
+                        <!-- Controls -->
+                        <div class="bg-slate-700/30 p-4 rounded-lg border border-slate-600">
+                            <div class="flex justify-between items-center mb-3 border-b border-slate-600 pb-2">
+                                <h4 class="font-bold text-orange-300">Mounting Configuration</h4>
+                                <button onclick="resetDefaults()"
+                                    class="text-xs bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded transition flex items-center gap-1 shadow-sm">
+                                    <span>↺</span> Reset Default
+                                </button>
+                            </div>
+
+                            <!-- Body X Config -->
+                            <div class="grid grid-cols-12 gap-2 items-center mb-3">
+                                <div class="col-span-4 text-sm font-bold text-cyan-400">Robot Front (X)</div>
+                                <div class="col-span-1 text-center text-slate-400">=</div>
+                                <div class="col-span-3">
+                                    <select id="sel_x_sign"
+                                        class="w-full bg-slate-800 text-white text-xs md:text-sm border border-slate-600 rounded px-2 py-1 focus:outline-none focus:border-yellow-400">
+                                        <option value="SIGN_POS">+</option>
+                                        <option value="SIGN_NEG">-</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-4">
+                                    <select id="sel_x_axis"
+                                        class="w-full bg-slate-800 text-white text-xs md:text-sm border border-slate-600 rounded px-2 py-1 focus:outline-none focus:border-yellow-400">
+                                        <option value="AXIS_X">Sensor X</option>
+                                        <option value="AXIS_Y" selected>Sensor Y</option>
+                                        <option value="AXIS_Z">Sensor Z</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Body Y Config -->
+                            <div class="grid grid-cols-12 gap-2 items-center mb-3">
+                                <div class="col-span-4 text-sm font-bold text-fuchsia-400">Robot Right (Y)</div>
+                                <div class="col-span-1 text-center text-slate-400">=</div>
+                                <div class="col-span-3">
+                                    <select id="sel_y_sign"
+                                        class="w-full bg-slate-800 text-white text-xs md:text-sm border border-slate-600 rounded px-2 py-1 focus:outline-none focus:border-yellow-400">
+                                        <option value="SIGN_POS">+</option>
+                                        <option value="SIGN_NEG" selected>-</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-4">
+                                    <select id="sel_y_axis"
+                                        class="w-full bg-slate-800 text-white text-xs md:text-sm border border-slate-600 rounded px-2 py-1 focus:outline-none focus:border-yellow-400">
+                                        <option value="AXIS_X" selected>Sensor X</option>
+                                        <option value="AXIS_Y">Sensor Y</option>
+                                        <option value="AXIS_Z">Sensor Z</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Body Z Config -->
+                            <div class="grid grid-cols-12 gap-2 items-center">
+                                <div class="col-span-4 text-sm font-bold text-yellow-400">Robot Up (Z)</div>
+                                <div class="col-span-1 text-center text-slate-400">=</div>
+                                <div class="col-span-3">
+                                    <select id="sel_z_sign"
+                                        class="w-full bg-slate-800 text-white text-xs md:text-sm border border-slate-600 rounded px-2 py-1 focus:outline-none focus:border-yellow-400">
+                                        <option value="SIGN_POS" selected>+</option>
+                                        <option value="SIGN_NEG">-</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-4">
+                                    <select id="sel_z_axis"
+                                        class="w-full bg-slate-800 text-white text-xs md:text-sm border border-slate-600 rounded px-2 py-1 focus:outline-none focus:border-yellow-400">
+                                        <option value="AXIS_X">Sensor X</option>
+                                        <option value="AXIS_Y">Sensor Y</option>
+                                        <option value="AXIS_Z" selected>Sensor Z</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generated Code -->
+                        <div class="bg-slate-950 p-4 rounded-lg border border-slate-700 relative group">
+                            <div class="absolute top-2 right-2 text-xs text-slate-500">Generated Code</div>
+                            <pre class="text-xs md:text-sm text-slate-300 font-mono leading-relaxed whitespace-pre-wrap"
+                                id="generatedCode">
+                                // Initializing...
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-12 md:mt-20 mb-12">
+            <h2 class="text-2xl md:text-3xl font-bold text-orange-400 text-center mb-6">Implementation Examples</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+
+                <!-- Usage Card -->
+                <div class="bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700">
+                    <div class="bg-slate-750 p-4 border-b border-slate-600 flex justify-between items-center">
+                        <h3 class="font-bold text-yellow-400 text-lg">📡 Standard Usage</h3>
+                        <span
+                            class="text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded border border-blue-800">main.c</span>
+                    </div>
+                    <div class="p-4 md:p-6 overflow-x-auto">
+                        <pre class="text-xs md:text-sm text-slate-300 font-mono leading-relaxed"><code><span class="text-purple-400">#include</span> <span class="text-green-400">"ICM20948.h"</span>
+
+<span class="text-gray-500">// 0. Define Handle with Hardware Config</span>
+<span class="text-yellow-300">ICM20948_HandleTypeDef</span> ICM = {
+    .<span class="text-blue-300">hspi</span> = &hspi5,
+    .<span class="text-blue-300">CS_GPIO_Port</span> = GPIOA,
+    .<span class="text-blue-300">CS_Pin</span> = GPIO_PIN_4
+};
+
+<span class="text-blue-400">void</span> <span class="text-yellow-300">main</span>() {
+    <span class="text-gray-500">// 1. Initialize & Load Calibration</span>
+    <span class="text-yellow-300">ICM20948</span>.<span class="text-blue-300">Init</span>(&ICM);
+
+    <span class="text-purple-400">while</span> (<span class="text-orange-400">1</span>) {
+        <span class="text-gray-500">// 2. Read & Process</span>
+        <span class="text-yellow-300">ICM20948</span>.<span class="text-blue-300">ReadData</span>(&ICM);
+        
+        <span class="text-blue-400">float</span> ax = ICM.sensor.accel.x;
+        <span class="text-blue-300">printf</span>(<span class="text-green-400">"Accel X: %.2f g\n"</span>, ax);
+        
+        <span class="text-blue-300">HAL_Delay</span>(<span class="text-orange-400">2</span>);
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <!-- Calibration Card -->
+                <div class="bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700">
+                    <div class="bg-slate-750 p-4 border-b border-slate-600 flex justify-between items-center">
+                        <h3 class="font-bold text-yellow-400 text-lg">🛠️ Calibration Routine</h3>
+                        <span
+                            class="text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded border border-blue-800">setup.c</span>
+                    </div>
+                    <div class="p-4 md:p-6 overflow-x-auto">
+                        <pre class="text-xs md:text-sm text-slate-300 font-mono leading-relaxed"><code><span class="text-blue-400">void</span> <span class="text-yellow-300">RunCalibration</span>() {
+    <span class="text-blue-300">printf</span>(<span class="text-green-400">"Starting Calibration...\n"</span>);
+
+    <span class="text-gray-500">// 1. Gyro: Place sensor FLAT and STATIONARY</span>
+    <span class="text-yellow-300">ICM20948</span>.<span class="text-blue-300">CalibrateGyro</span>(&ICM);
+
+    <span class="text-gray-500">// 2. Accel: Follow terminal prompts (6 positions)</span>
+    <span class="text-yellow-300">ICM20948</span>.<span class="text-blue-300">CalibrateAccel</span>(&ICM);
+
+    <span class="text-gray-500">// 3. Mag: Wave sensor in Figure-8 motion</span>
+    <span class="text-yellow-300">ICM20948</span>.<span class="text-blue-300">CalibrateMag</span>(&ICM);
+    
+    <span class="text-gray-500">// Result: Values printed to terminal</span>
+}</code></pre>
+                    </div>
+                </div>
+
+                <!-- Saving Calibration Card (New) -->
+                <div class="bg-slate-800 rounded-xl shadow-xl overflow-hidden border border-slate-700 lg:col-span-2">
+                    <div class="bg-slate-750 p-4 border-b border-slate-600 flex justify-between items-center">
+                        <h3 class="font-bold text-yellow-400 text-lg">💾 Saving Calibration Data</h3>
+                        <span
+                            class="text-xs bg-blue-900/50 text-blue-300 px-2 py-1 rounded border border-blue-800">ICM20948.c</span>
+                    </div>
+                    <div class="p-4 md:p-6 bg-slate-900/50">
+                        <p class="text-sm text-slate-400 mb-4">Copy the values from your terminal and paste them at the
+                            top of the <code>ICM20948_Init</code> function:</p>
+                        <div class="overflow-x-auto">
+                            <pre class="text-xs md:text-sm text-slate-300 font-mono leading-relaxed"><code><span class="text-blue-400">void</span> <span class="text-yellow-300">ICM20948_Init</span>(<span class="text-yellow-300">ICM20948_HandleTypeDef</span> *icm)
+{
+    <span class="text-gray-500">// ------------------------------------------------------------------</span>
+    <span class="text-gray-500">// [USER CONFIG] Pre-calibrated values (Hardcoded)</span>
+    <span class="text-gray-500">// ------------------------------------------------------------------</span>
+    
+    <span class="text-gray-500">// Reset Bias (0)</span>
+    icm->bias.gyro.x = <span class="text-orange-400">-8.2528f</span>;
+    icm->bias.gyro.y = <span class="text-orange-400">3.1247f</span>;
+    icm->bias.gyro.z = <span class="text-orange-400">5.9230f</span>;
+    icm->bias.mag.x = <span class="text-orange-400">-215.5f</span>;
+    icm->bias.mag.y = <span class="text-orange-400">137.0f</span>;
+    icm->bias.mag.z = <span class="text-orange-400">94.0f</span>;
+    icm->bias.accel.x = <span class="text-orange-400">-18.9f</span>;
+    icm->bias.accel.y = <span class="text-orange-400">-14.8f</span>;
+    icm->bias.accel.z = <span class="text-orange-400">141.7f</span>;
+
+    <span class="text-gray-500">// Set Scale (1)</span>
+    icm->scale.gyro.x = <span class="text-orange-400">1.0f</span>;
+    icm->scale.gyro.y = <span class="text-orange-400">1.0f</span>;
+    icm->scale.gyro.z = <span class="text-orange-400">1.0f</span>;
+    icm->scale.mag.x = <span class="text-orange-400">1.5012f</span>;
+    icm->scale.mag.y = <span class="text-orange-400">0.8863f</span>;
+    icm->scale.mag.z = <span class="text-orange-400">0.8295f</span>;
+    icm->scale.accel.x = <span class="text-orange-400">1.0021f</span>;
+    icm->scale.accel.y = <span class="text-orange-400">1.0010f</span>;
+    icm->scale.accel.z = <span class="text-orange-400">0.9980f</span>;
+
+    <span class="text-gray-500">// ... rest of init code ...</span>
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center p-8 border-t border-slate-800 bg-slate-900/50">
+        <p class="text-slate-400 text-sm md:text-base">Built with Chart.js and Tailwind CSS.</p>
+        <p class="text-xs text-slate-500 mt-2">This infographic was generated as a single HTML file. No SVG or Mermaid
+            JS elements were used.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // --- Axis Remapping Interactive Logic ---
+            const selects = {
+                x: { axis: document.getElementById('sel_x_axis'), sign: document.getElementById('sel_x_sign') },
+                y: { axis: document.getElementById('sel_y_axis'), sign: document.getElementById('sel_y_sign') },
+                z: { axis: document.getElementById('sel_z_axis'), sign: document.getElementById('sel_z_sign') }
+            };
+            const codeBlock = document.getElementById('generatedCode');
+            const axisCanvas = document.getElementById('axisDiagram');
+
+            // 3D Camera State
+            let camPitch = -0.5; // Radians
+            let camYaw = 0.5;    // Radians
+            let camZoom = 1.0;
+            let isDragging = false;
+            let lastMouseX = 0, lastMouseY = 0;
+
+            // 3D Geometry
+            const boxSize = { w: 150, h: 30, d: 150 }; // Chip dimensions
+            const axisLen = 150;
+
+            // Helper: Rotate point in 3D
+            function rotate3D(x, y, z, yaw, pitch) {
+                // Rotate Y (Yaw)
+                let x1 = x * Math.cos(yaw) - z * Math.sin(yaw);
+                let z1 = x * Math.sin(yaw) + z * Math.cos(yaw);
+                // Rotate X (Pitch)
+                let y2 = y * Math.cos(pitch) - z1 * Math.sin(pitch);
+                let z2 = y * Math.sin(pitch) + z1 * Math.cos(pitch);
+                return { x: x1, y: y2, z: z2 };
+            }
+
+            function updateAxis() {
+                // 1. Update Code Block
+                const x_axis = selects.x.axis.value;
+                const x_sign = selects.x.sign.value;
+                const y_axis = selects.y.axis.value;
+                const y_sign = selects.y.sign.value;
+                const z_axis = selects.z.axis.value;
+                const z_sign = selects.z.sign.value;
+
+                const codeCorrect = `<span class="text-yellow-300">ICM20948</span>.<span class="text-blue-300">SetMounting</span>(&ICM,
+    <span class="text-green-400">${x_axis}</span>, <span class="text-green-400">${x_sign}</span>,  <span class="text-gray-500">// Robot Front (X) = Sensor ${x_sign === 'SIGN_NEG' ? '-' : ''}${x_axis.slice(-1)}</span>
+    <span class="text-green-400">${y_axis}</span>, <span class="text-green-400">${y_sign}</span>,  <span class="text-gray-500">// Robot Right (Y) = Sensor ${y_sign === 'SIGN_NEG' ? '-' : ''}${y_axis.slice(-1)}</span>
+    <span class="text-green-400">${z_axis}</span>, <span class="text-green-400">${z_sign}</span>   <span class="text-gray-500">// Robot Up (Z)    = Sensor ${z_sign === 'SIGN_NEG' ? '-' : ''}${z_axis.slice(-1)}</span>
+);`;
+                codeBlock.innerHTML = codeCorrect;
+
+                // 2. Draw Diagram
+                drawAxisDiagram();
+            }
+
+            // Make Reset Function Global
+            window.resetDefaults = function () {
+                // Reset to Identity Matrix (Standard Mounting)
+                selects.x.axis.value = 'AXIS_X'; selects.x.sign.value = 'SIGN_POS';
+                selects.y.axis.value = 'AXIS_Y'; selects.y.sign.value = 'SIGN_POS';
+                selects.z.axis.value = 'AXIS_Z'; selects.z.sign.value = 'SIGN_POS';
+
+                // Reset Camera
+                camPitch = -0.5;
+                camYaw = 0.5;
+                camZoom = 1.0;
+
+                updateAxis();
+            }
+
+            function drawAxisDiagram() {
+                if (!axisCanvas) return;
+
+                const dpr = window.devicePixelRatio || 1;
+                const rect = axisCanvas.getBoundingClientRect();
+                axisCanvas.width = rect.width * dpr;
+                axisCanvas.height = rect.height * dpr;
+
+                const ctx = axisCanvas.getContext('2d');
+                ctx.scale(dpr, dpr);
+
+                const w = rect.width;
+                const h = rect.height;
+                const cx = w / 2;
+                const cy = h / 2;
+
+                ctx.clearRect(0, 0, w, h);
+                ctx.lineCap = 'round';
+                ctx.font = 'bold 12px Inter';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Perspective projection helper
+                const fov = 600 * camZoom;
+                function project(p) {
+                    const scale = fov / (fov + p.z + 300);
+                    return {
+                        x: cx + p.x * scale,
+                        y: cy + p.y * scale,
+                        scale: scale
+                    };
+                }
+
+                // --- Draw Chip (Box) ---
+                const vertices = [
+                    { x: -boxSize.w / 2, y: -boxSize.h / 2, z: -boxSize.d / 2 },
+                    { x: boxSize.w / 2, y: -boxSize.h / 2, z: -boxSize.d / 2 },
+                    { x: boxSize.w / 2, y: boxSize.h / 2, z: -boxSize.d / 2 },
+                    { x: -boxSize.w / 2, y: boxSize.h / 2, z: -boxSize.d / 2 },
+                    { x: -boxSize.w / 2, y: -boxSize.h / 2, z: boxSize.d / 2 },
+                    { x: boxSize.w / 2, y: -boxSize.h / 2, z: boxSize.d / 2 },
+                    { x: boxSize.w / 2, y: boxSize.h / 2, z: boxSize.d / 2 },
+                    { x: -boxSize.w / 2, y: boxSize.h / 2, z: boxSize.d / 2 }
+                ];
+
+                // Rotate vertices
+                const rotVertices = vertices.map(v => rotate3D(v.x, v.y, v.z, camYaw, camPitch));
+                const projVertices = rotVertices.map(project);
+
+                // Draw faces (Simplified wireframe + fill style)
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1.5;
+                ctx.fillStyle = '#1e293b';
+
+                // Simple drawing order (Back-to-Front sort is complex, just draw wireframe box for clarity)
+                ctx.beginPath();
+                // Top face
+                ctx.moveTo(projVertices[0].x, projVertices[0].y);
+                ctx.lineTo(projVertices[1].x, projVertices[1].y);
+                ctx.lineTo(projVertices[5].x, projVertices[5].y);
+                ctx.lineTo(projVertices[4].x, projVertices[4].y);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+
+                // Bottom/Sides (Wireframe)
+                const edges = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
+                ctx.beginPath();
+                edges.forEach(e => {
+                    ctx.moveTo(projVertices[e[0]].x, projVertices[e[0]].y);
+                    ctx.lineTo(projVertices[e[1]].x, projVertices[e[1]].y);
+                });
+                ctx.stroke();
+
+                // Label "CHIP"
+                const center3D = rotate3D(0, -15, 0, camYaw, camPitch);
+                const center2D = project(center3D);
+                ctx.fillStyle = '#64748b';
+                ctx.fillText("SENSOR", center2D.x, center2D.y);
+
+                // --- Draw Axes Helper ---
+                function drawAxisArrow(name, x, y, z, color, type) {
+                    const p0_3d = rotate3D(0, 0, 0, camYaw, camPitch);
+                    const p1_3d = rotate3D(x, y, z, camYaw, camPitch);
+
+                    const p0 = project(p0_3d);
+                    const p1 = project(p1_3d);
+
+                    ctx.strokeStyle = color;
+                    ctx.fillStyle = color;
+                    ctx.lineWidth = type === 'body' ? 4 : 1.5;
+                    if (type === 'sensor') ctx.globalAlpha = 0.4;
+
+                    // Line
+                    ctx.beginPath();
+                    ctx.moveTo(p0.x, p0.y);
+                    ctx.lineTo(p1.x, p1.y);
+                    ctx.stroke();
+
+                    // Arrowhead
+                    const angle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+                    const headLen = 10 * p1.scale;
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p1.x - headLen * Math.cos(angle - Math.PI / 6), p1.y - headLen * Math.sin(angle - Math.PI / 6));
+                    ctx.lineTo(p1.x - headLen * Math.cos(angle + Math.PI / 6), p1.y - headLen * Math.sin(angle + Math.PI / 6));
+                    ctx.fill();
+
+                    // Label
+                    ctx.font = type === 'body' ? 'bold 14px Inter' : '12px Inter';
+                    ctx.fillText(name, p1.x + (p1.x - p0.x) * 0.1, p1.y + (p1.y - p0.y) * 0.1);
+
+                    ctx.globalAlpha = 1.0;
+                }
+
+                // 1. Draw Sensor Frame (Fixed)
+                // X = Red, Y = Green, Z = Blue
+                // Coordinate system: Right Handed? Usually X-Forward, Y-Right, Z-Up or Z-Down.
+                // Let's assume standard visual: +X Right, +Y Up/Back, +Z Up.
+                // Wait, chip frame usually: X/Y plane, Z vertical.
+                // Let's draw: X (Red), Y (Green), Z (Blue)
+                drawAxisArrow("sX", axisLen, 0, 0, "#ef4444", "sensor");
+                drawAxisArrow("sY", 0, 0, axisLen, "#22c55e", "sensor"); // Y mapped to Z depth for 3D viz feel
+                drawAxisArrow("sZ", 0, -axisLen, 0, "#3b82f6", "sensor"); // Z mapped to -Y screen (Up)
+
+                // 2. Draw Body Frame (Dynamic based on Selects)
+                // We need to map Body vectors (Front, Right, Up) to Sensor vectors
+                function getVectorFromSelect(row) {
+                    const axis = row.axis.value;
+                    const sign = row.sign.value === 'SIGN_POS' ? 1 : -1;
+                    let v = { x: 0, y: 0, z: 0 };
+
+                    if (axis === 'AXIS_X') v.x = axisLen * sign;
+                    else if (axis === 'AXIS_Y') v.z = axisLen * sign; // Map Y to Z-depth visually
+                    else if (axis === 'AXIS_Z') v.y = -axisLen * sign; // Map Z to -Y screen visually
+                    return v;
+                }
+
+                const vFront = getVectorFromSelect(selects.x);
+                const vRight = getVectorFromSelect(selects.y);
+                const vUp = getVectorFromSelect(selects.z);
+
+                drawAxisArrow("FRONT", vFront.x, vFront.y, vFront.z, "#22d3ee", "body"); // Cyan
+                drawAxisArrow("RIGHT", vRight.x, vRight.y, vRight.z, "#e879f9", "body"); // Pink
+                drawAxisArrow("UP", vUp.x, vUp.y, vUp.z, "#facc15", "body"); // Yellow
+
+                // Legend
+                ctx.font = '10px Inter';
+                ctx.fillStyle = '#94a3b8';
+                ctx.textAlign = 'left';
+                ctx.fillText("Dimmed = Chip Axes", 10, h - 20);
+                ctx.fillText("Bright = Robot Axes", 10, h - 10);
+            }
+
+            // Interaction Handlers
+            const container = document.querySelector('.axis-container');
+
+            container.addEventListener('mousedown', e => {
+                isDragging = true;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                container.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDragging = false;
+                container.style.cursor = 'grab';
+            });
+
+            container.addEventListener('mousemove', e => {
+                if (!isDragging) return;
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+
+                camYaw -= deltaX * 0.01;
+                camPitch += deltaY * 0.01;
+
+                // Clamp pitch to avoid gimbal lock confusion
+                camPitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, camPitch));
+
+                drawAxisDiagram();
+            });
+
+            // Touch support
+            container.addEventListener('touchstart', e => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    lastMouseX = e.touches[0].clientX;
+                    lastMouseY = e.touches[0].clientY;
+                }
+            });
+            container.addEventListener('touchmove', e => {
+                if (isDragging && e.touches.length === 1) {
+                    e.preventDefault(); // Prevent scrolling
+                    const deltaX = e.touches[0].clientX - lastMouseX;
+                    const deltaY = e.touches[0].clientY - lastMouseY;
+                    lastMouseX = e.touches[0].clientX;
+                    lastMouseY = e.touches[0].clientY;
+                    camYaw -= deltaX * 0.01;
+                    camPitch += deltaY * 0.01;
+                    drawAxisDiagram();
+                }
+            });
+            window.addEventListener('touchend', () => isDragging = false);
+
+            container.addEventListener('wheel', e => {
+                e.preventDefault();
+                camZoom += e.deltaY * -0.001;
+                camZoom = Math.min(Math.max(0.1, camZoom), 50.0);
+                drawAxisDiagram();
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                drawAxisDiagram();
+            });
+
+            // Attach Listeners to Selects
+            Object.values(selects).forEach(s => {
+                s.axis.addEventListener('change', updateAxis);
+                s.sign.addEventListener('change', updateAxis);
+            });
+
+            // Initial Draw
+            updateAxis();
+
+
+            // Shared tooltip configuration for clearer multi-line labels if needed
+            const sharedTooltipCallback = {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            title: function (tooltipItems) {
+                                const item = tooltipItems[0];
+                                let label = item.chart.data.labels[item.dataIndex];
+                                if (Array.isArray(label)) {
+                                    return label.join(' ');
+                                } else {
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            // Common chart options for responsiveness and styling
+            const commonOptions = {
+                ...sharedTooltipCallback,
+                maintainAspectRatio: false, // Critical for responsive container fitting
+                responsive: true,
+                plugins: {
+                    ...sharedTooltipCallback.plugins,
+                    legend: {
+                        labels: { color: '#e2e8f0', boxWidth: 12, padding: 15, font: { size: 11 } }
+                    }
+                }
+            };
+
+            const lineChartOptions = {
+                ...commonOptions,
+                scales: {
+                    y: {
+                        ticks: { color: '#94a3b8', font: { size: 10 } },
+                        grid: { color: '#334155', borderDash: [2, 2] },
+                        border: { display: false }
+                    },
+                    x: {
+                        ticks: { color: '#94a3b8', font: { size: 10 } },
+                        grid: { color: '#334155', borderDash: [2, 2] },
+                        border: { display: false }
+                    }
+                }
+            };
+
+            // --- Chart 1: Raw Magnetometer Data ---
+            const rawMagCtx = document.getElementById('rawMagChart').getContext('2d');
+            new Chart(rawMagCtx, {
+                type: 'line',
+                data: {
+                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                    datasets: [{
+                        label: 'Raw Mag X (uT)',
+                        data: [-210.5, -195.2, -220.8, -205.1, -215.3, -199.9, -212.0],
+                        borderColor: '#FF4E50',
+                        backgroundColor: 'rgba(255, 78, 80, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: lineChartOptions
+            });
+
+            // --- Chart 2: Calibrated Magnetometer Data ---
+            const calibratedMagCtx = document.getElementById('calibratedMagChart').getContext('2d');
+            new Chart(calibratedMagCtx, {
+                type: 'line',
+                data: {
+                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                    datasets: [{
+                        label: 'Calibrated Mag X (uT)',
+                        data: [-0.1, 0.2, -0.3, 0.0, -0.2, 0.1, -0.1], // Centered around 0
+                        borderColor: '#4ade80', // Green-400
+                        backgroundColor: 'rgba(74, 222, 128, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    ...lineChartOptions,
+                    scales: {
+                        ...lineChartOptions.scales,
+                        y: {
+                            ...lineChartOptions.scales.y,
+                            min: -2, max: 2, // Zoom in to show centering
+                        }
+                    }
+                }
+            });
+
+            // --- Chart 3: 9-DOF Components ---
+            const dofCtx = document.getElementById('dofChart').getContext('2d');
+            new Chart(dofCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Accel (3-Axis)', 'Gyro (3-Axis)', 'Mag (3-Axis)'],
+                    datasets: [{
+                        data: [3, 3, 3],
+                        backgroundColor: ['#FF4E50', '#FC913A', '#F9D423'],
+                        borderColor: '#1e293b',
+                        borderWidth: 3,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    ...commonOptions,
+                    cutout: '65%',
+                    plugins: {
+                        ...commonOptions.plugins,
+                        legend: {
+                            position: 'bottom',
+                            labels: { ...commonOptions.plugins.legend.labels, padding: 20 }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
