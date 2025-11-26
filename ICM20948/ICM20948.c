@@ -238,10 +238,10 @@ static void ICM20948_ReadData(ICM20948_HandleTypeDef *icm)
     gy_s = ((float)icm->raw.gyro.y - icm->bias.gyro.y) / GYRO_SENSITIVITY;
     gz_s = ((float)icm->raw.gyro.z - icm->bias.gyro.z) / GYRO_SENSITIVITY;
 
-    // // --- Mag (Sensor Frame) ---
+    // --- Mag (Sensor Frame) ---
     mx_s = ((float)icm->raw.mag.x - icm->bias.mag.x) * icm->scale.mag.x * MAG_SENSITIVITY;
-    my_s = ((float)icm->raw.mag.y - icm->bias.mag.y) * icm->scale.mag.y * MAG_SENSITIVITY * -1.0f; // [CHANGE] แก้แกน Y ให้ตรงกับแกน X
-    mz_s = ((float)icm->raw.mag.z - icm->bias.mag.z) * icm->scale.mag.z * MAG_SENSITIVITY * -1.0f; // [CHANGE] แก้แกน Z ให้ตรงกับแกนอื่นๆ
+    my_s = ((float)icm->raw.mag.y - icm->bias.mag.y) * icm->scale.mag.y * MAG_SENSITIVITY * -1.0f;
+    mz_s = ((float)icm->raw.mag.z - icm->bias.mag.z) * icm->scale.mag.z * MAG_SENSITIVITY * -1.0f;
 
     // เก็บใส่ Array ชั่วคราว
     float a_tmp[3] = {ax_s, ay_s, az_s};

@@ -130,12 +130,6 @@ int main(void)
 
   ICM20948.Init(&ICM);
   // ICM20948.SetMounting(&ICM, AXIS_Z, SIGN_NEG, AXIS_Y, SIGN_POS, AXIS_X, SIGN_POS);
-  // ICM20948.SetMounting(&ICM, 
-  //     AXIS_X, SIGN_POS, 
-  //     AXIS_Y, SIGN_POS, 
-  //     AXIS_Z, SIGN_POS
-  // );
-
   ICM20948.SetMounting(&ICM,
       AXIS_Z, SIGN_NEG,  // Robot Front (X) = Sensor -Z
       AXIS_Y, SIGN_POS,  // Robot Right (Y) = Sensor Y
