@@ -10,17 +10,6 @@ This project was developed with STM32CubeIDE and is configured for an STM32F746Z
 
 ---
 
-## Taming the 9-DOF Beast: The Core Problem
-
-The ICM-20948 is a powerful sensor, but its raw output is noisy, uncalibrated, and misaligned. Without proper processing, the data is unusable for calculating accurate orientation.
-
-| BEFORE: Raw Magnetometer Data | AFTER: Calibrated Data |
-| :---: | :---: |
-| <img src="https://i.imgur.com/tZ2eYqX.png" alt="Raw Magnetometer Data" width="350"/> | <img src="https://i.imgur.com/tJ2XlOG.png" alt="Calibrated Magnetometer Data" width="350"/> |
-| Without calibration, the data is offset and distorted, making it useless for calculating direction. | The driver's calibration suite corrects Hard/Soft Iron errors, providing a clean, centered data stream. |
-
----
-
 ## Key Features
 
 This driver is more than just a register reader. It's a full-fledged processing suite.
