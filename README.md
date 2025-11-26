@@ -138,3 +138,10 @@ void ICM20948_Init(ICM20948_HandleTypeDef *icm)
 
 This project is licensed under the terms of the **MIT License**. See the [LICENSE](LICENSE) file for details.
 
+---
+
+## Documentation
+
+For a more detailed explanation of the driver, its features, and the implementation, please visit the project page:
+[ICM-20948 STM32 Driver Documentation](https://deepinbubblegum.github.io/ICM20948-STM32-Driver/)
+
