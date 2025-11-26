@@ -26,6 +26,7 @@ static void ICM20948_SetMounting(ICM20948_HandleTypeDef *icm,
                                  Axis_Sel_t x_src, Axis_Sign_t x_sign,
                                  Axis_Sel_t y_src, Axis_Sign_t y_sign,
                                  Axis_Sel_t z_src, Axis_Sign_t z_sign);
+static float ICM20948_CalculateHeading(ICM20948_HandleTypeDef *icm);
 
 // --- Public Function Struct ---
 ICM20948_t ICM20948 = {
@@ -35,6 +36,7 @@ ICM20948_t ICM20948 = {
     .CalibrateGyro = ICM20948_CalibrateGyro,
     .CalibrateMag = ICM20948_CalibrateMag,
     .CalibrateAccel = ICM20948_CalibrateAccel,
+    .CalculateHeading = ICM20948_CalculateHeading,
 };
 
 //==============================================================================
@@ -627,7 +629,7 @@ static void ICM20948_CalibrateAccel(ICM20948_HandleTypeDef *icm)
     printf("Scale Factor: X=%.4f, Y=%.4f, Z=%.4f\r\n", icm->scale.accel.x, icm->scale.accel.y, icm->scale.accel.z);
 }
 
-void ICM20948_SetMounting(ICM20948_HandleTypeDef *icm, Axis_Sel_t x_src, Axis_Sign_t x_sign, Axis_Sel_t y_src, Axis_Sign_t y_sign, Axis_Sel_t z_src, Axis_Sign_t z_sign)
+static void ICM20948_SetMounting(ICM20948_HandleTypeDef *icm, Axis_Sel_t x_src, Axis_Sign_t x_sign, Axis_Sel_t y_src, Axis_Sign_t y_sign, Axis_Sel_t z_src, Axis_Sign_t z_sign)
 {
     // แกน X
     icm->mounting.x.src_axis = x_src;
@@ -640,4 +642,42 @@ void ICM20948_SetMounting(ICM20948_HandleTypeDef *icm, Axis_Sel_t x_src, Axis_Si
     // แกน Z
     icm->mounting.z.src_axis = z_src;
     icm->mounting.z.sign = z_sign;
+}
+
+// ฟังก์ชันคำนวณทิศที่ถูกต้อง (รองรับการเอียง + หมุนตามเข็มนาฬิกา)
+static float ICM20948_CalculateHeading(ICM20948_HandleTypeDef *icm) {
+    // 1. ดึงค่า Body Frame (ที่ Remap มาแล้ว)
+    float ax = icm->sensor.accel.x;
+    float ay = icm->sensor.accel.y;
+    float az = icm->sensor.accel.z;
+    float mx = icm->sensor.mag.x;
+    float my = icm->sensor.mag.y;
+    float mz = icm->sensor.mag.z;
+
+    // 2. คำนวณมุมเอียงของรถ (Pitch & Roll) จากแรงโน้มถ่วง
+    // สูตรนี้ใช้ได้เสมอเพราะเรา Remap แกน Accel มาให้ตรงกับ Body แล้ว
+    float roll  = atan2f(ay, az);
+    float pitch = atan2f(-ax, sqrtf(ay * ay + az * az));
+
+    // 3. หมุนสนามแม่เหล็กกลับมาให้ขนานกับพื้นโลก (Tilt Compensation)
+    float cos_roll  = cosf(roll);
+    float sin_roll  = sinf(roll);
+    float cos_pitch = cosf(pitch);
+    float sin_pitch = sinf(pitch);
+
+    // คำนวณองค์ประกอบแม่เหล็กในแนวราบ (Horizontal Component)
+    float Xh = mx * cos_pitch + mz * sin_pitch;
+    float Yh = mx * sin_roll * sin_pitch + my * cos_roll - mz * sin_roll * cos_pitch;
+
+    // 4. คำนวณทิศ (Heading)
+    // [สำคัญ] ต้องใช้ -Yh เพื่อให้มุมหมุน "ตามเข็มนาฬิกา" (Clockwise)
+    // 0=เหนือ, 90=ตะวันออก, 180=ใต้, 270=ตะวันตก
+    float heading = atan2f(-Yh, Xh) * (180.0f / 3.14159265f);
+
+    // 5. ปรับช่วงค่าลบให้เป็น 0-360
+    if (heading < 0) {
+        heading += 360.0f;
+    }
+
+    return heading;
 }

@@ -145,27 +145,11 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     ICM20948.ReadData(&ICM);
-    float mag_x = ICM.sensor.mag.x;
-    float mag_y = ICM.sensor.mag.y;
-
-    // 2. ใช้ atan2f(y, x) -> ได้ค่าเป็น Radians (-3.14 ถึง 3.14)
-    // หมายเหตุ: ใส่ y ก่อน x เสมอ
-    float heading_rad = atan2f(mag_y, mag_x);
-
-    // 3. แปลง Radians เป็น Degrees
-    float heading_deg = heading_rad * (180.0f / 3.14159265f);
-
-    // 4. ปรับค่าให้เป็น 0-360 องศา (เพราะ atan2 จะให้ค่า -180 ถึง 180)
-    if (heading_deg < 0)
-    {
-        heading_deg += 360.0f;
-    }
-
-    printf("Accel: X=%4.6f Y=%4.6f Z=%4.6f | Gyro: X=%4.6f Y=%4.6f Z=%4.6f | Mag: X=%4.6f Y=%4.6f Z=%4.6f | Compass Heading: %3.2f deg\r\n",
+    printf("Accel: X=%4.6f Y=%4.6f Z=%4.6f | Gyro: X=%4.6f Y=%4.6f Z=%4.6f | Mag: X=%4.6f Y=%4.6f Z=%4.6f | Temp: %3.2f C\r\n",
            ICM.sensor.accel.x, ICM.sensor.accel.y, ICM.sensor.accel.z,
            ICM.sensor.gyro.x, ICM.sensor.gyro.y, ICM.sensor.gyro.z,
            ICM.sensor.mag.x, ICM.sensor.mag.y, ICM.sensor.mag.z,
-           heading_deg);
+           ICM.sensor.temp);
   }
   /* USER CODE END 3 */
 }

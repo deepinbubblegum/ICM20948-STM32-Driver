@@ -9,6 +9,7 @@
 #define SRC_ICM20948_H_
 
 #include "main.h"
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -409,6 +410,7 @@ typedef struct
     void (*CalibrateGyro)(ICM20948_HandleTypeDef *icm);
     void (*CalibrateMag)(ICM20948_HandleTypeDef *icm);
     void (*CalibrateAccel)(ICM20948_HandleTypeDef *icm);
+    float (*CalculateHeading)(ICM20948_HandleTypeDef *icm);
 } ICM20948_t;
 
 extern ICM20948_t ICM20948;
