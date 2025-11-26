@@ -129,7 +129,18 @@ int main(void)
   HAL_Delay(1000);
 
   ICM20948.Init(&ICM);
-  ICM20948.SetMounting(&ICM, AXIS_Z, SIGN_NEG, AXIS_Y, SIGN_POS, AXIS_X, SIGN_POS);
+  // ICM20948.SetMounting(&ICM, AXIS_Z, SIGN_NEG, AXIS_Y, SIGN_POS, AXIS_X, SIGN_POS);
+  // ICM20948.SetMounting(&ICM, 
+  //     AXIS_X, SIGN_POS, 
+  //     AXIS_Y, SIGN_POS, 
+  //     AXIS_Z, SIGN_POS
+  // );
+
+  ICM20948.SetMounting(&ICM,
+      AXIS_Z, SIGN_NEG,  // Robot Front (X) = Sensor -Z
+      AXIS_Y, SIGN_POS,  // Robot Right (Y) = Sensor Y
+      AXIS_X, SIGN_POS   // Robot Up (Z)    = Sensor X
+  );
 
   // ICM20948.CalibrateGyro(&ICM);
   // ICM20948.CalibrateMag(&ICM);
@@ -145,6 +156,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     ICM20948.ReadData(&ICM);
+    // printf("Raw mag: X=%4d Y=%4d Z=%4d\r\n",
+    //        ICM.raw.mag.x, ICM.raw.mag.y, ICM.raw.mag.z);
+
     printf("Accel: X=%4.6f Y=%4.6f Z=%4.6f | Gyro: X=%4.6f Y=%4.6f Z=%4.6f | Mag: X=%4.6f Y=%4.6f Z=%4.6f | Temp: %3.2f C\r\n",
            ICM.sensor.accel.x, ICM.sensor.accel.y, ICM.sensor.accel.z,
            ICM.sensor.gyro.x, ICM.sensor.gyro.y, ICM.sensor.gyro.z,
