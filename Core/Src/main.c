@@ -143,12 +143,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     ICM20948.ReadData(&ICM);
-    // printf("Raw Accel: X=%6d Y=%6d Z=%6d | Raw Gyro: X=%6d Y=%6d Z=%6d | Raw Mag: X=%6d Y=%6d Z=%6d | Raw Temp: %6d\r\n",
-    //        ICM.raw.accel.x, ICM.raw.accel.y, ICM.raw.accel.z,
-    //        ICM.raw.gyro.x, ICM.raw.gyro.y, ICM.raw.gyro.z,
-    //        ICM.raw.mag.x, ICM.raw.mag.y, ICM.raw.mag.z,
-    //        ICM.raw.temp);
-
     printf("Accel: X=%4.6f Y=%4.6f Z=%4.6f | Gyro: X=%4.6f Y=%4.6f Z=%4.6f | Mag: X=%4.6f Y=%4.6f Z=%4.6f | Temp: %4.6f\r\n",
            ICM.sensor.accel.x, ICM.sensor.accel.y, ICM.sensor.accel.z,
            ICM.sensor.gyro.x, ICM.sensor.gyro.y, ICM.sensor.gyro.z,

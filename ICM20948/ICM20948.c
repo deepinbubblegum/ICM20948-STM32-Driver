@@ -48,24 +48,28 @@ void ICM20948_Init(ICM20948_HandleTypeDef *icm)
     // If you change the board, please run calibration functions again.
     // ------------------------------------------------------------------
     // configure calibration data
-    // Reset Bias (0)
+    // Reset Bias (0) default values 0
     icm->bias.gyro.x = -8.2528f;
     icm->bias.gyro.y = 3.1247f;
     icm->bias.gyro.z = 5.9230f;
-    icm->bias.mag.x = -215.5f;
-    icm->bias.mag.y = 137.0f;
-    icm->bias.mag.z = 94.0f;
+
+    icm->bias.mag.x = -69.50f;
+    icm->bias.mag.y = 125.50f;
+    icm->bias.mag.z = 212.50f;
+
     icm->bias.accel.x = -18.9f;
     icm->bias.accel.y = -14.8f;
     icm->bias.accel.z = 141.7f;
 
-    // Set Scale (1)
+    // Set Scale (1) default values 1
     icm->scale.gyro.x = 1.0f;
     icm->scale.gyro.y = 1.0f;
     icm->scale.gyro.z = 1.0f;
-    icm->scale.mag.x = 1.5012f;
-    icm->scale.mag.y = 0.8863f;
-    icm->scale.mag.z = 0.8295f;
+
+    icm->scale.mag.x = 0.8822f;
+    icm->scale.mag.y = 1.0438f;
+    icm->scale.mag.z = 1.1009f;
+
     icm->scale.accel.x = 1.0021f;
     icm->scale.accel.y = 1.0010f;
     icm->scale.accel.z = 0.9980f;
@@ -232,19 +236,15 @@ static void ICM20948_ReadData(ICM20948_HandleTypeDef *icm)
     gy_s = ((float)icm->raw.gyro.y - icm->bias.gyro.y) / GYRO_SENSITIVITY;
     gz_s = ((float)icm->raw.gyro.z - icm->bias.gyro.z) / GYRO_SENSITIVITY;
 
-    // --- Mag (Sensor Frame) ---
-    mx_s = ((float)icm->raw.mag.x - icm->bias.mag.x) * icm->scale.mag.x * MAG_SENSITIVITY;
-    my_s = ((float)icm->raw.mag.y - icm->bias.mag.y) * icm->scale.mag.y * MAG_SENSITIVITY;
-    mz_s = ((float)icm->raw.mag.z - icm->bias.mag.z) * icm->scale.mag.z * MAG_SENSITIVITY;
+    // // --- Mag (Sensor Frame) ---
+    mx_s = ((float)icm->raw.mag.y - icm->bias.mag.y) * icm->scale.mag.y * MAG_SENSITIVITY;
+    my_s = ((float)icm->raw.mag.x - icm->bias.mag.x) * icm->scale.mag.x * MAG_SENSITIVITY;
+    mz_s = ((float)icm->raw.mag.z - icm->bias.mag.z) * icm->scale.mag.z * MAG_SENSITIVITY * -1.0f;
 
     // เก็บใส่ Array ชั่วคราว
     float a_tmp[3] = {ax_s, ay_s, az_s};
     float g_tmp[3] = {gx_s, gy_s, gz_s};
     float m_tmp[3] = {mx_s, my_s, mz_s};
-
-    float acc_x_raw = (float)icm->raw.accel.x - icm->bias.accel.x;
-    float acc_y_raw = (float)icm->raw.accel.y - icm->bias.accel.y;
-    float acc_z_raw = (float)icm->raw.accel.z - icm->bias.accel.z;
 
     // Map Accel to Body Frame
     icm->sensor.accel.x = a_tmp[icm->mounting.x.src_axis] * (float)icm->mounting.x.sign;
@@ -411,7 +411,7 @@ static void ICM20948_CalibrateGyro(ICM20948_HandleTypeDef *icm)
  */
 static void ICM20948_CalibrateMag(ICM20948_HandleTypeDef *icm)
 {
-    printf("Starting Mag Calibration... ROTATE SENSOR in Figure-8 for 15 seconds!\r\n");
+    printf("Starting Mag Calibration... ROTATE SENSOR in Figure-8 for 30 seconds!\r\n");
 
     int16_t mag_min[3] = {32000, 32000, 32000};
     int16_t mag_max[3] = {-32000, -32000, -32000};
@@ -419,7 +419,7 @@ static void ICM20948_CalibrateMag(ICM20948_HandleTypeDef *icm)
     uint32_t start_tick = HAL_GetTick();
 
     // วนลูป 15 วินาที
-    while ((HAL_GetTick() - start_tick) < 15000)
+    while ((HAL_GetTick() - start_tick) < 30000)
     {
         ICM20948_ReadData(icm);
 
@@ -609,13 +609,6 @@ static void ICM20948_CalibrateAccel(ICM20948_HandleTypeDef *icm)
     float z_bias_g = (acc_plus[2] + acc_minus[2]) / 2.0f;
     float z_scale_g = (acc_plus[2] - acc_minus[2]) / 2.0f;
 
-    // Save to Struct (Convert Bias back to Raw LSB for consistency if your ReadData uses Raw Bias)
-    // แต่เดี๋ยวก่อน! Struct bias.accel ของคุณเก็บเป็น float หรือ int16?
-    // ใน ICM20948_ReadData คุณใช้: (float)icm->raw.accel.x / ACCEL_SENSITIVITY
-    // ดังนั้นเราเก็บ Bias เป็นหน่วย 'g' (float) ใน struct sensor_t ได้เลยจะง่ายกว่า
-    // แต่ถ้าใน struct คุณเป็น sensor_t (float) อยู่แล้ว ก็ใช้หน่วย g ได้เลย
-
-    // *** หมายเหตุ: ต้องแก้ ReadData ให้รองรับ Bias Accel ด้วยนะครับ ***
     icm->bias.accel.x = x_bias_g * 8192.0f; // เก็บเป็นหน่วย Raw LSB เพื่อให้เข้าสูตรเดิมง่าย
     icm->bias.accel.y = y_bias_g * 8192.0f;
     icm->bias.accel.z = z_bias_g * 8192.0f;
