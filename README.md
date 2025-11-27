@@ -1,6 +1,5 @@
 # ICM-20948 STM32 Driver: From Noisy Data to Robot-Ready Orientation
 
-[![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge)](https://github.com/deepinbubblegum/ICM20948-STM32-Driver)
 [![Interface](https://img.shields.io/badge/Interface-SPI-blue?style=for-the-badge)](https://www.st.com/en/development-tools/stm32cubeide.html)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
