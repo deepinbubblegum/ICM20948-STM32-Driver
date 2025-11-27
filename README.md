@@ -1,7 +1,6 @@
 # ICM-20948 STM32 Driver: From Noisy Data to Robot-Ready Orientation
 
 [![Interface](https://img.shields.io/badge/Interface-SPI-blue?style=for-the-badge)](https://www.st.com/en/development-tools/stm32cubeide.html)
-[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
 An advanced STM32 driver for the TDK InvenSense ICM-20948 9-DOF sensor. This driver provides a complete software suite to transform the sensor's raw, chaotic output into a stable, accurate, and intuitive data stream ready for any robotics, drone, or motion-tracking project.
 
@@ -132,13 +131,6 @@ void ICM20948_Init(ICM20948_HandleTypeDef *icm)
     // ... rest of init code ...
 }
 ```
-
-## License
-
-This project is licensed under the terms of the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
----
-
 ## Documentation
 
 For a more detailed explanation of the driver, its features, and the implementation, please visit the project page:
